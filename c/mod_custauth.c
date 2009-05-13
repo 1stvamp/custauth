@@ -23,6 +23,7 @@
  */
 #include "httpd.h"
 #include "http_config.h"
+#include "stdio.h"
 
 /*
  * The default value for the error string.
@@ -70,15 +71,15 @@ static void mod_custauth_register_hooks (apr_pool_t *p)
 	ap_hook_handler(mod_custauth_auth_handler, NULL, NULL, APR_HOOK_FIRST);
 }
 /**
- * This function is called when the "ModTut2String" configuration directive is parsed.
+ * This function is called when the "ModCustAuth2String" configuration directive is parsed.
  */
-static const char *set_modcustauth_string(cmd_parms *parms, void *mconfig, const char *arg)
+static const char *set_modcustauth_command_string(cmd_parms *parms, void *mconfig, const char *arg)
 {
 	// get the module configuration (this is the structure created by create_modcustauth_config())
 	modcustauth_config *s_cfg = ap_get_module_config(parms->server->module_config, &custauth_module);
 
 	// make a duplicate of the argument's value using the command parameters pool.
-	s_cfg->string = (char *) arg;
+	s_cfg->command_string = ap_escape_shell_cmd((char *) arg);
 
 	// success
 	return NULL;
@@ -90,11 +91,11 @@ static const char *set_modcustauth_string(cmd_parms *parms, void *mconfig, const
 static const command_rec mod_custauth_cmds[] =
 {
 	AP_INIT_TAKE1(
-		"ModuleTutorialString",
-		set_modcustauth_string,
+		"ModuleCustAuthCommandString",
+		set_modcustauth_command_string,
 		NULL,
 		RSRC_CONF,
-		"ModTut2String <string> -- the string to print to the error log for each HTTP request."
+		"ModCustAuthCommandString <string> -- the command (script) to pass authentication details to."
 	),
 	{NULL}
 };
