@@ -25,6 +25,7 @@
 #include "httpd.h"
 #include "http_config.h"
 #include "stdio.h"
+#include "util.c"
 
 /*
  * The default value for the error string.
@@ -61,7 +62,7 @@ static int mod_custauth_basic_auth_handler (request_rec *r)
 	// Get the http username
 	sent_un = ap_pstrdup(r->pool, r->connection->user);
 
-	sprintf(cmd, "%s \"%s:::%s\"", s_cfg->command_string, sent_un, sent_pw);
+	sprintf(cmd, "%s \"%s:::%s\"", s_cfg->command_string, ap_escape_shell_cmd(r->pool, sent_un), ap_escape_shell_cmd(r->pool, sent_pw));
 	result = (int) exec_cmd(cmd, &buffer);
 
 	switch(result) {
