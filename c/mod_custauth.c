@@ -21,6 +21,7 @@
 /*
  * Include the core server components.
  */
+#include "mod_custauth.h"
 #include "httpd.h"
 #include "http_config.h"
 #include "stdio.h"
@@ -48,14 +49,63 @@ typedef struct {
  * This function is registered as a handler for HTTP Auth methods and will
  * therefore be invoked for Basic and Digest Auth requests
  */
-static int mod_custauth_auth_handler (request_rec *r)
+static int mod_custauth_basic_auth_handler (request_rec *r)
 {
+	char *sent_pw, *sent_un, *buffer, *cmd;
+	int result;
 	// Get the module configuration
 	modcustauth_config *s_cfg = ap_get_module_config(r->server->module_config, &custauth_module);
-	
-	// Send a message to stderr (apache redirects this to the error log)
-	fprintf(stderr,"apache2_mod_custauth: Auth request by.\n");
-	return DECLINED;
+
+	// Get the http password
+	result = ap_get_basic_auth_pw(r, &sent_pw);
+	// Get the http username
+	sent_un = ap_pstrdup(r->pool, r->connection->user);
+
+	sprintf(cmd, "%s \"%s:::%s\"", s_cfg->command_string, sent_un, sent_pw);
+	result = (int) exec_cmd(cmd, &buffer);
+
+	switch(result) {
+		case 0:
+			return HTTP_UNAUTHORIZED;
+			break;
+		case 1:
+			return OK;
+			break;
+		case 2:
+		default:
+			// Send a message to stderr (apache redirects this to the error log)
+			fprintf(stderr,"apache2_mod_custauth: Auth request by %s\n", sent_un);
+			return DECLINED;
+			break;
+	}
+}
+
+char exec_cmd(char *cmd, char *buf)
+{
+	char output[1024], start[1024];
+	char *s;
+	FILE *fpo;
+	int size;
+	int ret;
+	if((fpo = popen(cmd, "r") )== NULL)
+	{
+		sprintf(start, "error");
+		size = 6;
+	}
+	else
+	{
+		sprintf(start, "");
+		size =0;
+		while((s =fgets(output, 1024, fpo)) != NULL){
+			strcat(start, output);
+			size += (strlen(output)+1);
+			if(output == NULL)
+				break;
+		}
+	}
+	strcpy(buf, start);
+	ret = pclose(fpo);
+	return (ret);
 }
 
 /*
@@ -68,7 +118,7 @@ static void mod_custauth_register_hooks (apr_pool_t *p)
 	// I think this is the call to make to register a handler for method calls (GET PUT et. al.).
 	// We will ask to be last so that the comment has a higher tendency to
 	// go at the end.
-	ap_hook_handler(mod_custauth_auth_handler, NULL, NULL, APR_HOOK_FIRST);
+	ap_hook_handler(mod_custauth_basic_auth_handler, NULL, NULL, APR_HOOK_FIRST);
 }
 /**
  * This function is called when the "ModCustAuth2String" configuration directive is parsed.
@@ -79,7 +129,7 @@ static const char *set_modcustauth_command_string(cmd_parms *parms, void *mconfi
 	modcustauth_config *s_cfg = ap_get_module_config(parms->server->module_config, &custauth_module);
 
 	// make a duplicate of the argument's value using the command parameters pool.
-	s_cfg->command_string = ap_escape_shell_cmd((char *) arg);
+	s_cfg->command_string = (char *) arg;
 
 	// success
 	return NULL;
