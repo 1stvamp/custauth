@@ -49,7 +49,7 @@ sub handler
         return Apache2::Const::HTTP_UNAUTHORIZED;
    }
    
-   my @args = ($user, $password);
+   my @args = ("{$user}:::{$password}");
    # Possibly use IPC::Run here instead, as this forking will probably only work in nix
    open my $command_out, "-|", $pip_command, @args;
    
