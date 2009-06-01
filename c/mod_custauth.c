@@ -54,12 +54,12 @@ static int mod_custauth_basic_auth_handler (request_rec *r)
 {
 	char *sent_pw, *sent_un, *buffer, *cmd;
 	int result;
-	// Get the module configuration
+	/* Get the module configuration */
 	modcustauth_config *s_cfg = ap_get_module_config(r->server->module_config, &custauth_module);
 
-	// Get the http password
+	/* Get the http password */
 	result = ap_get_basic_auth_pw(r, &sent_pw);
-	// Get the http username
+	/* Get the http username */
 	sent_un = ap_pstrdup(r->pool, r->connection->user);
 
 	sprintf(cmd, "%s \"%s:::%s\"", s_cfg->command_string, ap_escape_shell_cmd(r->pool, sent_un), ap_escape_shell_cmd(r->pool, sent_pw));
@@ -74,39 +74,34 @@ static int mod_custauth_basic_auth_handler (request_rec *r)
 			break;
 		case 2:
 		default:
-			// Send a message to stderr (apache redirects this to the error log)
+			/* Send a message to stderr (apache redirects this to the error log) */
 			fprintf(stderr,"apache2_mod_custauth: Auth request by %s\n", sent_un);
 			return DECLINED;
 			break;
 	}
 }
 
-char exec_cmd(char *cmd, char *buf)
-{
+char exec_cmd(char *cmd, char *  args[2], char *buf) {
 	char output[1024], start[1024];
 	char *s;
 	FILE *fpo;
 	int size;
-	int ret;
-	if((fpo = popen(cmd, "r") )== NULL)
-	{
+	if ((fpo = popen(cmd, "r")) == NULL) {
 		sprintf(start, "error");
 		size = 6;
-	}
-	else
-	{
+	} else {
 		sprintf(start, "");
 		size =0;
-		while((s =fgets(output, 1024, fpo)) != NULL){
+		while ((s = fgets(output, 1024, fpo)) != NULL) {
 			strcat(start, output);
 			size += (strlen(output)+1);
-			if(output == NULL)
+			if (output == NULL) {
 				break;
+			}
 		}
 	}
 	strcpy(buf, start);
-	ret = pclose(fpo);
-	return (ret);
+	return (int) pclose(fpo);
 }
 
 /*
@@ -116,9 +111,11 @@ char exec_cmd(char *cmd, char *buf)
  */
 static void mod_custauth_register_hooks (apr_pool_t *p)
 {
-	// I think this is the call to make to register a handler for method calls (GET PUT et. al.).
-	// We will ask to be last so that the comment has a higher tendency to
-	// go at the end.
+	/*
+	I think this is the call to make to register a handler for method calls (GET PUT et. al.).
+	We will ask to be last so that the comment has a higher tendency to
+	go at the end.
+	*/
 	ap_hook_handler(mod_custauth_basic_auth_handler, NULL, NULL, APR_HOOK_FIRST);
 }
 /**
@@ -126,13 +123,13 @@ static void mod_custauth_register_hooks (apr_pool_t *p)
  */
 static const char *set_modcustauth_command_string(cmd_parms *parms, void *mconfig, const char *arg)
 {
-	// get the module configuration (this is the structure created by create_modcustauth_config())
+	/* get the module configuration (this is the structure created by create_modcustauth_config()) */
 	modcustauth_config *s_cfg = ap_get_module_config(parms->server->module_config, &custauth_module);
 
-	// make a duplicate of the argument's value using the command parameters pool.
+	/* make a duplicate of the argument's value using the command parameters pool. */
 	s_cfg->command_string = (char *) arg;
 
-	// success
+	/* success */
 	return NULL;
 }
 
@@ -158,13 +155,13 @@ static void *create_modcustauth_config(apr_pool_t *p, server_rec *s)
 {
 	modcustauth_config *newcfg;
 
-	// allocate space for the configuration structure from the provided pool p.
+	/* allocate space for the configuration structure from the provided pool p. */
 	newcfg = (modcustauth_config *) apr_pcalloc(p, sizeof(modcustauth_config));
 
-	// set the default value for the error string.
+	/* set the default value for the error string. */
 	newcfg->string = DEFAULT_MODTUT2_STRING;
 
-	// return the new server configuration structure.
+	/* return the new server configuration structure. */
 	return (void *) newcfg;
 }
 
@@ -176,11 +173,11 @@ static void *create_modcustauth_config(apr_pool_t *p, server_rec *s)
  */
 module AP_MODULE_DECLARE_DATA custauth_module =
 {
-	STANDARD20_MODULE_STUFF, // standard stuff; no need to mess with this.
-	NULL, // create per-directory configuration structures - we do not.
-	NULL, // merge per-directory - no need to merge if we are not creating anything.
-	create_modcustauth_config, // create per-server configuration structures.
-	NULL, // merge per-server - hrm - examples I have been reading don't bother with this for trivial cases.
-	mod_custauth_cmds, // configuration directive handlers
-	mod_custauth_register_hooks, // request handlers
+	STANDARD20_MODULE_STUFF, /* standard stuff; no need to mess with this. */
+	NULL, /* create per-directory configuration structures - we do not. */
+	NULL, /* merge per-directory - no need to merge if we are not creating anything. */
+	create_modcustauth_config, /* create per-server configuration structures. */
+	NULL, /* merge per-server - hrm - examples I have been reading don't bother with this for trivial cases. */
+	mod_custauth_cmds, /* configuration directive handlers */
+	mod_custauth_register_hooks, /* request handlers */
 };
