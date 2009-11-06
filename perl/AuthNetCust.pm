@@ -124,7 +124,7 @@ Module Home: n/a
 
 =head1 AUTHOR
 
- Wesley Mason wes @ 1stvamp.org
+ Wesley Mason <wes [at] 1stvamp [dot] org>
 
 =head1 SEE ALSO
 
@@ -138,7 +138,7 @@ Mark Wilcox and Shannon Eric Peevey for Apache2::AuthNetLDAP.
 
 You can distribute and modify in accordance to the same license as Perl. Though I would like to know how you are using the module or if you are using the module at all.
 
-Like most of the stuff on the 'net, I got this copy to work for me without destroying mankind, you're mileage may vary.
+Like most of the stuff on the 'net, I got this copy to work for me without destroying mankind, your mileage may vary.
 
 =cut
 
