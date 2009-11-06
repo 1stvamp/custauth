@@ -49,7 +49,7 @@ sub handler
         return Apache2::Const::HTTP_UNAUTHORIZED;
    }
    
-   $command = "$pip_command $user $password";
+   $command = "$pipe_command $user $password";
    $command_out = qx($command);
    
    if ($command_out eq 0) {
