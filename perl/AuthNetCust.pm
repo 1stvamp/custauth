@@ -3,7 +3,6 @@ package Apache2::AuthNetCust;
 use strict;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
-use Net::LDAP;
 use mod_perl2;
 
 require Exporter;
@@ -40,17 +39,17 @@ sub handler
 
    # Command must be provided
    my $pipe_command = $r->dir_config('Command');
+   # Argument delimiter to use between arguments
+   my $delim = $r->dir_config('ArgDelimiter') ? $r->dir_config('ArgDelimiter') : "\|\|";
    
-   my $command_out = "";
-
    if ($password eq "") {
         $r->note_basic_auth_failure;
 	$r->log_error("user $user: no password supplied",$r->uri);
         return Apache2::Const::HTTP_UNAUTHORIZED;
    }
    
-   $command = "$pipe_command $user $password";
-   $command_out = qx($command);
+   my $command = "$pipe_command $user $delim $password";
+   my $command_out = qx($command);
    
    if ($command_out eq 0) {
         return Apache2::Const::HTTP_UNAUTHORIZED;
@@ -59,6 +58,7 @@ sub handler
    } elsif ($command_out eq 2) {
         return Apache2::Const::DECLINED;
    }
+}
 
 # Autoload methods go after =cut, and are processed by the autosplit program.
 
@@ -74,6 +74,7 @@ Apache2::AuthNetCust - mod_perl module that calls a user defined auth backend
  AuthType Basic
 
  PerlSetVar Command "/opt/mysite/scripts/auth.sh" # command must be set
+ PerlSetVar ArgDelimiter "^^^" # if not set, defaults to ||
 
  require valid-user
 
@@ -106,6 +107,7 @@ AuthName "Custom Auth"
  AuthType Basic
 
  PerlSetVar Command "/opt/mysite/scripts/auth.sh" # command must be set
+ PerlSetVar ArgDelimiter "^^^" # if not set, defaults to ||
 
  require valid-user
 
@@ -118,9 +120,11 @@ You may also notice that the Makefile.PL will ask you to install ExtUtils::AutoI
 necessary for the installation process to automatically install any of the dependencies that you
 are prompted for. You may choose to install the module, or not.
 
+For an example of a simple auth handler script, see example_handler.pl
+
 =head1 HOMEPAGE
 
-Module Home: n/a
+Module Home: http://github.com/1stvamp/custauth
 
 =head1 AUTHOR
 
